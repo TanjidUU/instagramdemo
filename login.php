@@ -1,45 +1,24 @@
 <?php
-include_once 'connect.php';
+    include_once 'connect.php';
 
-// Start the session if needed
-if (session_status() === PHP_SESSION_NONE) {
-    session_start();
-}
+    $username  = $_POST['username'];
+    $password  = $_POST['password'];
 
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $username = trim($_POST['username']);
-    $password = trim($_POST['password']);
+    $result = mysqli_query($conn,  "SELECT 1 AS 'verified'
+                                    FROM users
+                                    WHERE   username = '$username' 
+                                                AND
+                                            password = '$password' ");
 
-    // Prepare statement to prevent SQL injection
-    $stmt = $conn->prepare("SELECT password FROM users WHERE username = ?");
-    $stmt->bind_param("s", $username);
-    $stmt->execute();
-    $stmt->store_result();
+    $row        = mysqli_fetch_array($result);
+    $verified   = $row['verified'];
 
-    if ($stmt->num_rows === 1) {
-        // User exists
-        $stmt->bind_result($dbPassword);
-        $stmt->fetch();
-
-        // Option 1: Plaintext comparison (not secure)
-        if ($password === $dbPassword) {
-            header("Location: feed.php?username=" . urlencode($username));
-            exit();
-        }
-
-        // Option 2: Hashed password check (secure - if passwords are hashed in DB)
-        // if (password_verify($password, $dbPassword)) {
-        //     header("Location: feed.php?username=" . urlencode($username));
-        //     exit();
-        // }
+    if($verified)
+        header("Location: feed.php?username=$username");
+    else{
+        //echo "Wrong passward or Username!";
+        header("Location: index.php");
     }
-
-    // Invalid login
-    header("Location: index.php?error=1");
+        
     exit();
-} else {
-    // Invalid request method
-    header("Location: index.php");
-    exit();
-}
 ?>
